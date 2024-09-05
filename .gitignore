@@ -32,3 +32,6 @@
 *.app
 
 *.user
+
+# user
+bin

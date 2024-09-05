@@ -1,0 +1,54 @@
+QWidget {
+    background-color: #1e1e1e;
+}
+
+QPushButton {
+    border: none;
+    background-color: #282828;
+    color: #ffffff;
+    font-family: AaFengKuangYuanShiRen;
+}
+
+QPushButton:hover {
+    background-color: #383838;
+}
+
+QListWidget {
+    background-color: #282828;
+    color: #ffffff;
+    border: none;
+    font-family: zihunjianqishoushu_T;
+}
+
+QGroupBox {
+    background-color: #282828;
+    color: #ffffff;
+}
+
+QTableWidget {
+    background-color: #282828;
+    color: #ffffff;
+    border: none;
+}
+
+QHeaderView, QHeaderView::section, QTableCornerButton::section {
+    background-color: #282828;
+    color: #ffffff;
+    border: none;
+}
+
+QRadioButton {
+    background-color: #282828;
+    color: #ffffff;
+    border: none;
+    font-family: YFMBQN;
+}
+
+QRadioButton:checked {
+    background-color: #383838;
+    color: #ffffff;
+}
+QRadioButton:hover {
+    background-color: #383838;
+    color: #ffffff;
+}

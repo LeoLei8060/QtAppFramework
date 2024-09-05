@@ -17,51 +17,27 @@ class QSingleApplication : public QApplication
 public:
     QSingleApplication(int &argc, char **argv, const QString &uniqueKey);
 
-    bool isAnotherInstanceRunning() const { return isRunning; }
+    bool initializeStyleSheet(const QString &styleSheetPath);
 
-    bool sendMessage(const QString &message)
-    {
-        if (!isRunning)
-            return false;
+    bool initializeFonts(const QString &fontDirectory);
 
-        QLocalSocket socket;
-        socket.connectToServer(uniqueKey);
-        if (!socket.waitForConnected(500)) {
-            return false;
-        }
+    bool isAnotherInstanceRunning() const { return m_isRunning; }
 
-        QByteArray  byteArray;
-        QDataStream out(&byteArray, QIODevice::WriteOnly);
-        out << message;
+    bool sendMessage(const QString &message);
 
-        socket.write(byteArray);
-        socket.waitForBytesWritten();
-        socket.disconnectFromServer();
-
-        return true;
-    }
+    static QSingleApplication *app() { return static_cast<QSingleApplication *> qApp; }
 
 signals:
     void messageReceived(const QString &message);
 
 private slots:
-    void handleNewConnection()
-    {
-        QLocalSocket *socket = localServer->nextPendingConnection();
-        connect(socket, &QLocalSocket::readyRead, this, [this, socket]() {
-            QDataStream in(socket);
-            QString     message;
-            in >> message;
-            emit messageReceived(message);
-            socket->disconnectFromServer();
-        });
-    }
+    void handleNewConnection();
 
 private:
-    QString       uniqueKey;
-    QSharedMemory sharedMemory;
-    QLocalServer *localServer = nullptr;
-    bool          isRunning;
+    QString       m_uniqueKey;
+    QSharedMemory m_sharedMemory;
+    QLocalServer *m_localServer = nullptr;
+    bool          m_isRunning;
 };
 
 #endif // __QSINGLEAPPLICATION_H__

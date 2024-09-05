@@ -28,7 +28,7 @@ else()
 endif()
 
 # 指定生成文件的输出路径，区分不同架构和构建类型
-set(OUTPUT_BASE_DIR ${CMAKE_BINARY_DIR}/bin)
+set(OUTPUT_BASE_DIR ${CMAKE_SOURCE_DIR}/bin)
 
 # 设置可执行文件的输出目录
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLATFORM_DIR}/${ARCH_DIR})
@@ -40,5 +40,15 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLAT
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLATFORM_DIR}/${ARCH_DIR})
 
 
-add_subdirectory(src)
+set(FONTFILE_PATH ${CMAKE_SOURCE_DIR}/test/res/font)
+set(FONTFILE_SAVEPATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/font)
+# 拷贝
+if(EXISTS "${FONTFILE_PATH}")
+    execute_process( COMMAND ${CMAKE_COMMAND} -E copy_directory ${FONTFILE_PATH} ${FONTFILE_SAVEPATH})
+else()
+    message(WARNING "copy failed")
+endif()
+
+
+#add_subdirectory(src)
 add_subdirectory(test)
