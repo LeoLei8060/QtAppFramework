@@ -1,54 +1,67 @@
-cmake_minimum_required(VERSION 3.5)
-set(PROJECTNAME QtAppFrameworkTest)
-project(${PROJECTNAME})
+cmake_minimum_required(VERSION 3.14)
 
-set(CMAKE_AUTOUIC ON)
+project(QAppFramework VERSION 1.0.0 LANGUAGES CXX)
+
+# 设置 CMake 策略
+if(POLICY CMP0072)
+    cmake_policy(SET CMP0072 NEW)
+endif()
+
+# 设置 C++ 标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# 启用 Qt 自动处理
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# 允许用户选择 Qt 版本
+option(USE_QT6 "Use Qt 6" ON)
 
-# 设置构建类型，如果没有指定，则默认为 Debug
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug)
+# 查找 Qt 包
+if(USE_QT6)
+    find_package(Qt6 COMPONENTS
+        Core
+        Gui
+        Widgets
+        Network
+        QUIET
+    )
 endif()
 
-# 检测平台和架构
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(ARCH_DIR x64)
+if(NOT Qt6_FOUND)
+    set(USE_QT6 OFF)
+    find_package(Qt5 5.15 COMPONENTS
+        Core
+        Gui
+        Widgets
+        Network
+        REQUIRED
+    )
+    set(Qt Qt5)
 else()
-    set(ARCH_DIR x86)
+    set(Qt Qt6)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(PLATFORM_DIR windows)
+message(STATUS "Using Qt ${Qt}")
+
+# 设置输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# 添加编译选项
+if(MSVC)
+    add_compile_options(/W4 /MP)
 else()
-    set(PLATFORM_DIR unix)
+    add_compile_options(-Wall -Wextra)
 endif()
 
-# 指定生成文件的输出路径，区分不同架构和构建类型
-set(OUTPUT_BASE_DIR ${CMAKE_SOURCE_DIR}/bin)
+# 设置安装目录
+include(GNUInstallDirs)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
-# 设置可执行文件的输出目录
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLATFORM_DIR}/${ARCH_DIR})
-
-# 设置动态库的输出目录
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLATFORM_DIR}/${ARCH_DIR})
-
-# 设置静态库的输出目录
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BASE_DIR}/${CMAKE_BUILD_TYPE}/${PLATFORM_DIR}/${ARCH_DIR})
-
-
-set(FONTFILE_PATH ${CMAKE_SOURCE_DIR}/test/res/font)
-set(FONTFILE_SAVEPATH ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/font)
-# 拷贝
-if(EXISTS "${FONTFILE_PATH}")
-    execute_process( COMMAND ${CMAKE_COMMAND} -E copy_directory ${FONTFILE_PATH} ${FONTFILE_SAVEPATH})
-else()
-    message(WARNING "copy failed")
-endif()
-
-
-#add_subdirectory(src)
-add_subdirectory(test)
+# 添加子目录
+add_subdirectory(examples/FrameworkTest)

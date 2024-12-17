@@ -1,0 +1,15 @@
+{
+    "user": {
+        "theme": "default",
+        "window": {
+            "width": 800,
+            "height": 600,
+            "maximized": false
+        },
+        "preferences": {
+            "showToolbar": true,
+            "showStatusBar": true,
+            "autoSave": true
+        }
+    }
+}

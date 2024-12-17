@@ -1,0 +1,38 @@
+{
+    "colors": {
+        "primary": "#007ACC",
+        "secondary": "#5C2D91",
+        "background": "#FFFFFF",
+        "text": "#000000",
+        "link": "#0066CC",
+        "success": "#28A745",
+        "warning": "#FFC107",
+        "error": "#DC3545"
+    },
+    "fonts": {
+        "default": {
+            "family": "Microsoft YaHei",
+            "size": 9,
+            "weight": 400,
+            "italic": false
+        },
+        "title": {
+            "family": "Microsoft YaHei",
+            "size": 12,
+            "weight": 700,
+            "italic": false
+        },
+        "small": {
+            "family": "Microsoft YaHei",
+            "size": 8,
+            "weight": 400,
+            "italic": false
+        }
+    },
+    "styleSheets": {
+        "QPushButton": "QPushButton { background-color: #007ACC; color: white; border: none; padding: 5px 10px; border-radius: 3px; } QPushButton:hover { background-color: #005999; } QPushButton:pressed { background-color: #004C80; }",
+        "QLineEdit": "QLineEdit { border: 1px solid #CCCCCC; padding: 5px; border-radius: 3px; } QLineEdit:focus { border-color: #007ACC; }",
+        "QComboBox": "QComboBox { border: 1px solid #CCCCCC; padding: 5px; border-radius: 3px; } QComboBox::drop-down { border: none; } QComboBox::down-arrow { image: url(:/images/down-arrow.png); }",
+        "QGroupBox": "QGroupBox { border: 1px solid #CCCCCC; border-radius: 5px; margin-top: 1em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px; }"
+    }
+}

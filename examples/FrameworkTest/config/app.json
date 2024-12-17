@@ -1,0 +1,21 @@
+{
+    "app": {
+        "name": "Framework Test",
+        "version": "1.0.0",
+        "organization": "QAppFramework",
+        "settings": {
+            "language": "zh_CN",
+            "autoUpdate": true,
+            "logLevel": "debug"
+        }
+    },
+    "network": {
+        "timeout": 30000,
+        "retryCount": 3,
+        "maxConcurrent": 6
+    },
+    "theme": {
+        "default": "default",
+        "autoSave": true
+    }
+}

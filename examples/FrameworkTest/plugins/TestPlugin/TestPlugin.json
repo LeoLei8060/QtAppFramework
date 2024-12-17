@@ -1,0 +1,9 @@
+{
+    "Name" : "TestPlugin",
+    "Version" : "1.0.0",
+    "Vendor" : "QAppFramework",
+    "Copyright" : "(C) 2024",
+    "License" : "MIT",
+    "Description" : "A test plugin for QAppFramework",
+    "Url" : "https://github.com/yourusername/QAppFramework"
+}
