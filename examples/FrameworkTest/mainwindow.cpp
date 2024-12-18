@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "core/event/EventManager.h"
+#include "core/event/QEventForwarder.h"
 #include "core/utils/ConfigManager.h"
 #include "core/utils/PluginManager.h"
 #include "core/utils/SingleApplication.h"
@@ -41,8 +41,14 @@ void MainWindow::setupUI()
     // 事件测试组
     QGroupBox   *eventGroup = new QGroupBox("事件系统测试", this);
     QVBoxLayout *eventLayout = new QVBoxLayout(eventGroup);
-    sendEventBtn = new QPushButton("发送测试事件", this);
+    
+    sendEventBtn = new QPushButton("发送简单事件", this);
+    QPushButton *sendCustomEventBtn = new QPushButton("发送自定义事件", this);
+    QPushButton *checkEventBtn = new QPushButton("检查事件状态", this);
+    
     eventLayout->addWidget(sendEventBtn);
+    eventLayout->addWidget(sendCustomEventBtn);
+    eventLayout->addWidget(checkEventBtn);
     mainLayout->addWidget(eventGroup);
 
     // 网络测试组
@@ -88,12 +94,31 @@ void MainWindow::setupUI()
     statusBar()->addWidget(statusLabel);
 
     // 连接信号槽
-    connect(sendEventBtn, &QPushButton::clicked, this, &MainWindow::onPublishEvent);
     connect(sendRequestBtn, &QPushButton::clicked, this, &MainWindow::onSendRequest);
     connect(createThemeBtn, &QPushButton::clicked, this, &MainWindow::onCreateTheme);
     connect(loadPluginBtn, &QPushButton::clicked, this, &MainWindow::onLoadPlugin);
     connect(themeCombo, &QComboBox::currentTextChanged, this, &MainWindow::onApplyTheme);
     connect(sendMessageBtn, &QPushButton::clicked, this, &MainWindow::onSendMessage);
+    connect(sendEventBtn, &QPushButton::clicked, this, &MainWindow::onPublishEvent);
+    connect(sendCustomEventBtn, &QPushButton::clicked, this, [this]() {
+        int value = QDateTime::currentDateTime().time().second();
+        QString text = QString("自定义事件数据 - %1").arg(QDateTime::currentDateTime().toString());
+        
+        // 发送事件并检查结果
+        if (!QEventForwarder::publish("CustomEvent", toArg(value), toArg(text))) {
+            log(QString("发送自定义事件失败: %1").arg(QEventForwarder::getLastError()));
+            return;
+        }
+        
+        log(QString("已发送自定义事件: value=%1, text=%2").arg(value).arg(text));
+    });
+    connect(checkEventBtn, &QPushButton::clicked, this, [this]() {
+        QStringList events = {"TestEvent", "CustomEvent"};
+        for (const auto &event : events) {
+            bool hasSubscribers = QEventForwarder::hasSubscribers(event.toUtf8());
+            log(QString("事件 %1: %2").arg(event, hasSubscribers ? "有订阅者" : "无订阅者"));
+        }
+    });
 }
 
 void MainWindow::initializeFramework()
@@ -108,8 +133,8 @@ void MainWindow::initializeFramework()
     createDefaultConfig();
     connect(config, &ConfigManager::configChanged, this, &MainWindow::onConfigChanged);
 
-    // 初始化事件管理器
-    EventManager::instance();
+    // 初始化事件系统
+    QEventForwarder::clear(); // 清理之前可能存在的事件订阅
     onSubscribeEvent();
 
     // 初始化网络管理器
@@ -185,18 +210,40 @@ void MainWindow::onConfigChanged(const QString &key, const QVariant &value)
 void MainWindow::onPublishEvent()
 {
     QString message = QString("测试事件 - %1").arg(QDateTime::currentDateTime().toString());
-    EventManager::instance()->postEvent("TestEvent", message);
+    
+    // 发送事件并检查结果
+    if (!QEventForwarder::publish("TestEvent", toArg(message))) {
+        log(QString("发送事件失败: %1").arg(QEventForwarder::getLastError()));
+        return;
+    }
+    
     log("已发送事件: " + message);
 }
 
 void MainWindow::onSubscribeEvent()
 {
-    EventManager::instance()->postEventWithArgs("TestEvent", "Hello from direct call");
+    // 订阅事件
+    if (!QEventForwarder::subscribe(this, "TestEvent")) {
+        log(QString("订阅TestEvent失败: %1").arg(QEventForwarder::getLastError()));
+        return;
+    }
+    
+    if (!QEventForwarder::subscribe(this, "CustomEvent")) {
+        log(QString("订阅CustomEvent失败: %1").arg(QEventForwarder::getLastError()));
+        return;
+    }
+    
+    log("已成功订阅事件: TestEvent, CustomEvent");
 }
 
 void MainWindow::On_Event_TestEvent(const QString &message)
 {
-    log("收到事件: " + message);
+    log("收到TestEvent事件: " + message);
+}
+
+void MainWindow::On_Event_CustomEvent(int value, const QString &text)
+{
+    log(QString("收到CustomEvent事件: value=%1, text=%2").arg(value).arg(text));
 }
 
 void MainWindow::onSendRequest()

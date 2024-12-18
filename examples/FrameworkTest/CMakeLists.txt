@@ -11,7 +11,6 @@ set(PROJECT_SOURCES
 
 # 框架源文件
 set(FRAMEWORK_SOURCES
-    ${CMAKE_SOURCE_DIR}/src/core/event/EventManager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/event/QEventForwarder.cpp
     ${CMAKE_SOURCE_DIR}/src/core/utils/ConfigManager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/utils/PluginManager.cpp
@@ -21,9 +20,7 @@ set(FRAMEWORK_SOURCES
 )
 
 set(FRAMEWORK_HEADERS
-    ${CMAKE_SOURCE_DIR}/src/core/event/EventManager.h
     ${CMAKE_SOURCE_DIR}/src/core/event/QEventForwarder.h
-    ${CMAKE_SOURCE_DIR}/src/core/event/IEventHandler.h
     ${CMAKE_SOURCE_DIR}/src/core/utils/ConfigManager.h
     ${CMAKE_SOURCE_DIR}/src/core/utils/IPlugin.h
     ${CMAKE_SOURCE_DIR}/src/core/utils/PluginManager.h

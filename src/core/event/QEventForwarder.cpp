@@ -2,71 +2,132 @@
 #include <QWriteLocker>
 
 namespace Core {
-QMap<QByteArray, QList<QObject *>> QEventForwarder::psEvents_pool_;
-QReadWriteLock                     QEventForwarder::ps_Lock_;
-QString                            QEventForwarder::ps_LastError_;
 
-void QEventForwarder::unSubscribe(QObject *listener, const QByteArray &eventName)
+QMap<QByteArray, QList<QPointer<QObject>>> QEventForwarder::m_eventPool;
+QReadWriteLock QEventForwarder::m_lock;
+QString QEventForwarder::m_lastError;
+
+void QEventForwarder::unsubscribe(QObject *listener, const QByteArray &eventName)
 {
-    QWriteLocker locker(&ps_Lock_);
-    int          index = -1;
-    if (psEvents_pool_.contains(eventName) && (index = psEvents_pool_[eventName].indexOf(listener)) >= 0
-        && index < psEvents_pool_[eventName].count())
-        psEvents_pool_[eventName].takeAt(index);
+    if (!listener || eventName.isEmpty()) {
+        return;
+    }
+
+    QWriteLocker locker(&m_lock);
+    if (!m_eventPool.contains(eventName)) {
+        return;
+    }
+
+    auto &listeners = m_eventPool[eventName];
+    for (auto it = listeners.begin(); it != listeners.end();) {
+        if (!it->data() || it->data() == listener) {
+            it = listeners.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // 如果没有监听器了，删除这个事件
+    if (listeners.isEmpty()) {
+        m_eventPool.remove(eventName);
+    }
 }
 
 bool QEventForwarder::subscribe(QObject *listener, const QByteArray &eventName)
 {
-    QWriteLocker locker(&ps_Lock_);
-    if (psEvents_pool_.contains(eventName)) {
-        if (-1 != psEvents_pool_[eventName].indexOf(listener)) {
-            ps_LastError_ = QString("This object is subscribed to this eventName");
-            return false;
-        }
-        psEvents_pool_[eventName].push_back(listener);
-        return true;
-    } else {
-        psEvents_pool_.insert(eventName, {listener});
-        return true;
-    }
-}
-
-bool QEventForwarder::publish(const QByteArray  &eventName,
-                              Qt::ConnectionType connectionType,
-                              QGenericArgument   val0,
-                              QGenericArgument   val1,
-                              QGenericArgument   val2,
-                              QGenericArgument   val3,
-                              QGenericArgument   val4,
-                              QGenericArgument   val5,
-                              QGenericArgument   val6,
-                              QGenericArgument   val7,
-                              QGenericArgument   val8,
-                              QGenericArgument   val9)
-{
-    QReadLocker locker(&ps_Lock_);
-    if (!psEvents_pool_.contains(eventName)) {
-        ps_LastError_ = QString("No objects subscribe to this eventName");
+    if (!listener || eventName.isEmpty()) {
+        m_lastError = QStringLiteral("Invalid listener or event name");
         return false;
     }
-    auto        methodName = methodFormatting(eventName);
-    QStringList errors;
-    auto        listeners = psEvents_pool_[eventName]; // 创建副本
-    locker.unlock();                                   // 释放读取锁定
-    for (auto listener : listeners) {
-        if (!listener)
-            continue;
-        auto ret = QMetaObject::invokeMethod(
-            listener, methodName, connectionType, val0, val1, val2, val3, val4, val5, val6, val7, val8, val9);
-        if (!ret)
-            errors.append(QString("%1:%2").arg(listener->metaObject()->className(), listener->objectName()));
+
+    QWriteLocker locker(&m_lock);
+    
+    // 清理已失效的监听器
+    if (m_eventPool.contains(eventName)) {
+        auto &listeners = m_eventPool[eventName];
+        for (auto it = listeners.begin(); it != listeners.end();) {
+            if (!it->data()) {
+                it = listeners.erase(it);
+            } else if (it->data() == listener) {
+                m_lastError = QStringLiteral("Listener already subscribed to this event");
+                return false;
+            } else {
+                ++it;
+            }
+        }
     }
-    if (errors.isEmpty())
+
+    // 添加新的监听器
+    m_eventPool[eventName].append(QPointer<QObject>(listener));
+    
+    // 当监听器被销毁时自动取消订阅
+    QObject::connect(listener, &QObject::destroyed, [eventName]() {
+        unsubscribe(nullptr, eventName);
+    });
+
+    return true;
+}
+
+bool QEventForwarder::publish(const QByteArray &eventName,
+                           Qt::ConnectionType connectionType,
+                           QGenericArgument val0,
+                           QGenericArgument val1,
+                           QGenericArgument val2,
+                           QGenericArgument val3,
+                           QGenericArgument val4,
+                           QGenericArgument val5,
+                           QGenericArgument val6,
+                           QGenericArgument val7,
+                           QGenericArgument val8,
+                           QGenericArgument val9)
+{
+    if (eventName.isEmpty()) {
+        m_lastError = QStringLiteral("Event name cannot be empty");
+        return false;
+    }
+
+    QReadLocker locker(&m_lock);
+    if (!m_eventPool.contains(eventName) || m_eventPool[eventName].isEmpty()) {
+        m_lastError = QStringLiteral("No subscribers for event: %1").arg(QString(eventName));
+        return false;
+    }
+
+    auto methodName = formatMethodName(eventName);
+    QStringList errors;
+    auto listeners = m_eventPool[eventName]; // 创建副本
+    locker.unlock(); // 释放读取锁定
+
+    bool hasValidListener = false;
+    for (const auto &listener : listeners) {
+        if (!listener) {
+            continue;
+        }
+
+        hasValidListener = true;
+        auto ret = QMetaObject::invokeMethod(
+            listener.data(), methodName, connectionType,
+            val0, val1, val2, val3, val4,
+            val5, val6, val7, val8, val9);
+
+        if (!ret) {
+            errors.append(QStringLiteral("%1:%2")
+                .arg(listener->metaObject()->className(),
+                     listener->objectName()));
+        }
+    }
+
+    if (!hasValidListener) {
+        m_lastError = QStringLiteral("No valid listeners for event: %1").arg(QString(eventName));
+        return false;
+    }
+
+    if (errors.isEmpty()) {
         return true;
-    ps_LastError_ = QString("%1 execution failed:[\n").arg(QString(eventName));
-    for (auto &err : errors)
-        ps_LastError_ += QString("%1;\n").arg(err);
-    ps_LastError_ += "]\n";
+    }
+
+    m_lastError = QStringLiteral("Failed to deliver event %1 to:\n%2")
+        .arg(QString(eventName), errors.join("\n"));
     return false;
 }
+
 } // namespace Core

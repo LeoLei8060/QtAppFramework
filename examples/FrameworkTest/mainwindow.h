@@ -28,6 +28,7 @@ public slots:
     void onPublishEvent();
     void onSubscribeEvent();
     void On_Event_TestEvent(const QString &message);
+    void On_Event_CustomEvent(int value, const QString &text);
 
     // 网络请求测试
     void onSendRequest();
@@ -51,19 +52,16 @@ public slots:
 private:
     void setupUI();
     void initializeFramework();
-    void createDefaultTheme();
     void createDefaultConfig();
+    void createDefaultTheme();
+    void log(const QString &message);
 
     Ui::MainWindow *ui;
-
-    // UI 组件
-    QTextEdit   *logText;
-    QComboBox   *themeCombo;
-    QPushButton *sendEventBtn;
-    QPushButton *sendRequestBtn;
-    QPushButton *loadPluginBtn;
-    QLabel      *statusLabel;
-    QPushButton *sendMessageBtn;
-
-    void log(const QString &message);
+    QTextEdit      *logText;
+    QPushButton    *sendRequestBtn;
+    QPushButton    *sendEventBtn;     // 添加事件发送按钮
+    QPushButton    *loadPluginBtn;
+    QPushButton    *sendMessageBtn;
+    QComboBox      *themeCombo;
+    QLabel         *statusLabel;
 };
