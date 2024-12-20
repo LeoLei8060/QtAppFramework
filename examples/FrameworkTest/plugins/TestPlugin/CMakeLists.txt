@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 
-project(TestPlugin LANGUAGES CXX)
+project(TestPlugin)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
 
 # 源文件
 set(PROJECT_SOURCES
@@ -9,8 +13,8 @@ set(PROJECT_SOURCES
     TestPlugin.json
 )
 
-# 创建插件库
-add_library(${PROJECT_NAME} MODULE
+# 创建动态库
+add_library(${PROJECT_NAME} SHARED
     ${PROJECT_SOURCES}
 )
 
@@ -19,17 +23,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/src
 )
 
-# 设置目标属性
+# 设置输出目录
 set_target_properties(${PROJECT_NAME} PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/plugins"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/plugins"
 )
 
-# 链接 Qt 库
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    ${Qt}::Core
-    ${Qt}::Gui
+# 链接 Qt 库（使用 QtConfig 接口库）
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+    Qt::Core
+    Qt::Gui
 )
 
 # 复制插件描述文件

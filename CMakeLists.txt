@@ -1,67 +1,57 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.5)
 
 project(QAppFramework VERSION 1.0.0 LANGUAGES CXX)
 
-# 设置 CMake 策略
-if(POLICY CMP0072)
-    cmake_policy(SET CMP0072 NEW)
-endif()
+# 项目选项
+option(BUILD_EXAMPLES "Build example projects" ON)
+option(BUILD_TESTS "Build test projects" OFF)
 
-# 设置 C++ 标准
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# 启用 Qt 自动处理
+set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
 
-# 允许用户选择 Qt 版本
-option(USE_QT6 "Use Qt 6" ON)
-
-# 查找 Qt 包
-if(USE_QT6)
-    find_package(Qt6 COMPONENTS
-        Core
-        Gui
-        Widgets
-        Network
-        QUIET
-    )
-endif()
-
-if(NOT Qt6_FOUND)
-    set(USE_QT6 OFF)
-    find_package(Qt5 5.15 COMPONENTS
-        Core
-        Gui
-        Widgets
-        Network
-        REQUIRED
-    )
-    set(Qt Qt5)
-else()
-    set(Qt Qt6)
-endif()
-
-message(STATUS "Using Qt ${Qt}")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # 设置输出目录
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
-# 添加编译选项
-if(MSVC)
-    add_compile_options(/W4 /MP)
+# 查找 Qt
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Network)
+
+message(STATUS "Using Qt ${QT_VERSION_MAJOR}")
+
+# 创建一个接口库来传递 Qt 设置
+add_library(QtConfig INTERFACE)
+target_link_libraries(QtConfig INTERFACE
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Gui
+    Qt${QT_VERSION_MAJOR}::Widgets
+    Qt${QT_VERSION_MAJOR}::Network
+)
+
+# 添加第三方库
+add_subdirectory(3rdparty)
+
+# 添加源代码目录
+add_subdirectory(src)
+
+# 根据选项添加示例项目
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+    message(STATUS "Building example projects")
 else()
-    add_compile_options(-Wall -Wextra)
+    message(STATUS "Skipping example projects")
 endif()
 
-# 设置安装目录
-include(GNUInstallDirs)
-set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
-
-# 添加子目录
-add_subdirectory(examples/FrameworkTest)
+# 根据选项添加测试项目
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+    message(STATUS "Building test projects")
+else()
+    message(STATUS "Skipping test projects")
+endif()
