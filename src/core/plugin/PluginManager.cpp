@@ -1,0 +1,149 @@
+#include "PluginManager.h"
+#include <QDir>
+#include <QDebug>
+#include <QPluginLoader>
+
+PluginManager* PluginManager::s_instance = nullptr;
+
+PluginManager::PluginManager(QObject* parent)
+    : QObject(parent)
+{
+}
+
+PluginManager::~PluginManager()
+{
+    unloadPlugins();
+}
+
+PluginManager* PluginManager::instance()
+{
+    if (!s_instance) {
+        s_instance = new PluginManager();
+    }
+    return s_instance;
+}
+
+bool PluginManager::loadPlugin(const QString& path)
+{
+    QFileInfo fileInfo(path);
+    if (!fileInfo.exists()) {
+        emit pluginLoadFailed(fileInfo.fileName(), "Plugin file does not exist");
+        return false;
+    }
+
+    // 创建插件加载器
+    auto loader = new QPluginLoader(path);
+    if (!loader->load()) {
+        QString error = loader->errorString();
+        delete loader;
+        emit pluginLoadFailed(fileInfo.fileName(), error);
+        return false;
+    }
+
+    // 获取插件实例
+    QObject* instance = loader->instance();
+    if (!instance) {
+        loader->unload();
+        delete loader;
+        emit pluginLoadFailed(fileInfo.fileName(), "Failed to create plugin instance");
+        return false;
+    }
+
+    // 转换为插件接口
+    IPlugin* plugin = qobject_cast<IPlugin*>(instance);
+    if (!plugin) {
+        loader->unload();
+        delete loader;
+        emit pluginLoadFailed(fileInfo.fileName(), "Not a valid plugin");
+        return false;
+    }
+
+    // 初始化插件
+    if (!plugin->initialize()) {
+        loader->unload();
+        delete loader;
+        emit pluginLoadFailed(fileInfo.fileName(), "Plugin initialization failed");
+        return false;
+    }
+
+    // 保存插件和加载器
+    m_plugins[plugin->name()] = plugin;
+    m_loaders[plugin->name()] = loader;
+
+    emit pluginLoaded(plugin->name());
+    return true;
+}
+
+void PluginManager::unloadPlugins()
+{
+    // 先删除所有插件实例
+    qDeleteAll(m_plugins);
+    m_plugins.clear();
+
+    // 卸载并删除所有加载器
+    for (auto loader : m_loaders) {
+        loader->unload();
+        delete loader;
+    }
+    m_loaders.clear();
+}
+
+IPlugin* PluginManager::plugin(const QString& name) const
+{
+    return m_plugins.value(name);
+}
+
+QList<IPlugin*> PluginManager::getUIPlugins() const
+{
+    QList<IPlugin*> result;
+    for (auto plugin : m_plugins) {
+        if (plugin->hasWidget()) {
+            result.append(plugin);
+        }
+    }
+    return result;
+}
+
+QList<IPlugin*> PluginManager::getDataProcessorPlugins() const
+{
+    QList<IPlugin*> result;
+    for (auto plugin : m_plugins) {
+        if (plugin->canProcessData()) {
+            result.append(plugin);
+        }
+    }
+    return result;
+}
+
+QList<IPlugin*> PluginManager::getDataProviderPlugins() const
+{
+    QList<IPlugin*> result;
+    for (auto plugin : m_plugins) {
+        if (plugin->canProvideData()) {
+            result.append(plugin);
+        }
+    }
+    return result;
+}
+
+QList<IPlugin*> PluginManager::getDataAcceptorPlugins() const
+{
+    QList<IPlugin*> result;
+    for (auto plugin : m_plugins) {
+        if (plugin->canAcceptData()) {
+            result.append(plugin);
+        }
+    }
+    return result;
+}
+
+QList<IPlugin*> PluginManager::getExecutablePlugins() const
+{
+    QList<IPlugin*> result;
+    for (auto plugin : m_plugins) {
+        if (plugin->canExecute()) {
+            result.append(plugin);
+        }
+    }
+    return result;
+}

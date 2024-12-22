@@ -12,3 +12,6 @@ target_link_libraries(QAppFrameworkCore
     INTERFACE
     QtConfig
 )
+
+# 添加插件子目录
+add_subdirectory(plugin)

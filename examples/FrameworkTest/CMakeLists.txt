@@ -62,7 +62,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 set(RESOURCE_DIRS
     themes
     config
-    plugins
 )
 
 foreach(DIR ${RESOURCE_DIRS})
@@ -86,5 +85,3 @@ foreach(DIR ${RESOURCE_DIRS})
     )
 endforeach()
 
-# 添加插件子目录
-add_subdirectory(plugins/TestPlugin)
