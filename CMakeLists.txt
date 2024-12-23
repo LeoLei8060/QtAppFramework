@@ -2,6 +2,12 @@ cmake_minimum_required(VERSION 3.5)
 
 project(QAppFramework VERSION 1.0.0 LANGUAGES CXX)
 
+# 自动生成版本信息
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h"
+)
+
 # 项目选项
 option(BUILD_EXAMPLES "Build example projects" ON)
 option(BUILD_TESTS "Build test projects" OFF)
