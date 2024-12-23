@@ -34,6 +34,8 @@ private:
     explicit PluginManager(QObject* parent = nullptr);
     ~PluginManager() override;
 
+    bool checkVersion(const QString& pluginVersion) const;
+
     static PluginManager* s_instance;
     QMap<QString, IPlugin*> m_plugins;
     QMap<QString, QPluginLoader*> m_loaders;

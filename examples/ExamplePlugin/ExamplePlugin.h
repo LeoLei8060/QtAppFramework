@@ -5,7 +5,7 @@
 class ExamplePlugin : public IPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID PLUGIN_IID)
+    Q_PLUGIN_METADATA(IID "Example.plugin")
     Q_INTERFACES(IPlugin)
 
 public:
@@ -20,7 +20,7 @@ public:
     QStringList supportedInterfaces() const override;
 
     // 数据处理接口
-    bool canProcessData() const override { return true; }
+    bool    canProcessData() const override { return true; }
     QString processData(const QString &data) override;
 
 private:

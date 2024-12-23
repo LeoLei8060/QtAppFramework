@@ -36,7 +36,7 @@ QStringList TrafficLightPlugin::supportedInterfaces() const
     return {"UI"};
 }
 
-QWidget* TrafficLightPlugin::createWidget(QWidget *parent)
+QWidget *TrafficLightPlugin::createWidget(QWidget *parent)
 {
     return new TrafficLightWidget(parent);
 }

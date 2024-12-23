@@ -7,7 +7,7 @@ class TrafficLightWidget;
 class TrafficLightPlugin : public IPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID PLUGIN_IID)
+    Q_PLUGIN_METADATA(IID "TrafficLight.plugin")
     Q_INTERFACES(IPlugin)
 
 public:
@@ -22,8 +22,8 @@ public:
     QStringList supportedInterfaces() const override;
 
     // UI 相关接口
-    bool hasWidget() const override { return true; }
-    QWidget* createWidget(QWidget *parent = nullptr) override;
+    bool           hasWidget() const override { return true; }
+    QWidget       *createWidget(QWidget *parent = nullptr) override;
     WidgetPosition widgetPosition() const override { return WidgetPosition::TopToolBar; }
 
 private:
